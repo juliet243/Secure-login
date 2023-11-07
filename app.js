@@ -1,49 +1,49 @@
 require('dotenv').config();
 const express = require('express');
 const app = express();
-const https = require('https')
+const https = require('https');
 const fs = require('fs');
-const cors = require('cors');
-const hsts = require('./middleware/hsts')
+const helmet = require('helmet');
+const morgan = require('morgan');
 const mongoose = require('mongoose');
+const cors = require('cors'); // Import the 'cors' middleware
 
-
-//const certificate = fs.readFileSync('keys/certificate.pem')
-
-//Database
+// Database
 mongoose.connect(process.env.MONGODB_URL)
-.then(() => console.log('Db Connected :)'))
+  .then(() => console.log('Db Connected :)'));
 
-//Middleware
-app.use(cors({origin: 'https://localhost:3000', optionsSuccessStatus:200}))
+// Middleware
+app.use(cors({ origin: 'https://localhost:4200', credentials: true })); // Configure the 'cors' middleware with the desired options
 app.use(express.json());
-app.use(hsts);
+app.use(helmet());
+app.use(morgan('dev'));
 
-//Routers
-app.use('/api/auth', require("./routes/auth"));
-app.use('/api/user', require("./routes/user"));
-app.use('/api/post', require("./routes/post"));
+// Routers
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/user', require('./routes/user'));
+app.use('/api/post', require('./routes/post'));
 
-
-app.use((reg,res,next) => 
-{
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,ContentType,Accept,Authorization');
-    res.setHeader('Access-Control-Allow-Methods', '*');
+// Enable CORS headers in your app
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', 'https://localhost:4200'); // Replace with your Angular app's URL
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Methods', '*');
+    res.header('Access-Control-Allow-Credentials', 'true'); // Add this line to allow credentials
     next();
-
 });
 
-
-//listen
+// Listen
 https.createServer(
     {
         key: fs.readFileSync('./keys/privatekey.pem'),
         cert: fs.readFileSync('./keys/certificate.pem'),
-        passphrase:'friedgreentomatoes',
+        passphrase: 'friedgreentomatoes',
     },
     app
-).listen(3000);
+).listen(3000, () => {
+    console.log('Server is running on port 3000');
+});
+
 
 
 

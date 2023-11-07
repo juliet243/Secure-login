@@ -1,12 +1,18 @@
-const express = require('express');
+const express = require('express').Router;
 const app = express();
-const router = express.Router();
+const router = require('express').Router();
 const jwt = require('jsonwebtoken');
 const { User } = require('../models/user');
 const {isValidPassword } = require('../utils/hash');
 
+//brute force protection
+const ExpressBrute = require('express-brute');
+//in store memory for persisting request counts
+const store = new ExpressBrute.MemoryStore();
+const bruteforce = new ExpressBrute(store);
+
 // Login route
-router.post('/', async (req, res) => {
+router.post('/', bruteforce.prevent, async (req, res) => {
 const user = await User.findOne ({userName: req.body.userName });
 if (!user)
     return res.status(401).json({error: 'Incorrect username or password' });
